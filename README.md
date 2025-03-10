@@ -49,7 +49,7 @@ L'application est construite avec les technologies suivantes :
 1. Cloner le dépôt :
 ```bash
 git clone https://github.com/kid-emmanuelle/IntergicielMessagerie.git
-cd messagerie-entreprise
+cd IntergicielMessagerie
 ```
 
 2. Lancer les services avec Docker Compose :
