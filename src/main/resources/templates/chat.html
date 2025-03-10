@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OceaNous's Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/chat.css}">
+    <link rel="stylesheet" th:href="@{/css/discord-style-messages.css}">
+    <script defer src="https://cdn.jsdelivr.net/npm/@coreui/coreui-pro@5.10.0/dist/js/coreui.bundle.min.js"></script>
+</head>
+<body>
+<div class="chat-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="app-title">
+            <i class="bi bi-chat-dots-fill"></i>
+            <span>OceaNous's Chat</span>
+        </div>
+
+        <div class="search-container">
+            <div class="search-input">
+                <i class="bi bi-search"></i>
+                <input type="text" placeholder="Search..."/>
+            </div>
+        </div>
+
+        <ul class="nav nav-pills sidebar-tabs" id="sidebarTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-panel"
+                        type="button" role="tab">
+                    Users
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="files-tab" data-bs-toggle="tab" data-bs-target="#files-panel" type="button"
+                        role="tab">
+                    Files
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content flex-grow-1">
+            <!-- Users Panel - now active by default -->
+            <div class="tab-pane fade show active" id="users-panel" role="tabpanel">
+                <div class="p-3 section-header">
+                    <h6 class="mb-0"><i class="bi bi-circle-fill text-success me-2" style="font-size: 10px;"></i>Online
+                        Users</h6>
+                </div>
+                <div class="user-list" id="userList">
+                    <div class="user-item" data-user="broadcast">
+                        <div class="user-avatar">
+                            <i class="bi bi-broadcast"></i>
+                        </div>
+                        <div class="user-info">
+                            <span class="user-name">Broadcast to All</span>
+                        </div>
+                    </div>
+                    <!-- User list will be populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Files Panel -->
+            <div class="tab-pane fade" id="files-panel" role="tabpanel">
+                <div class="p-3 section-header">
+                    <h6 class="mb-0"><i class="bi bi-files me-2"></i>Available Files</h6>
+                </div>
+                <div id="fileList" class="p-3">
+                    <!-- File list will be populated dynamically -->
+                    <div class="text-center text-muted p-3" id="noFilesMessage">
+                        <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                        No pending files
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Profile Section -->
+        <div class="user-profile">
+            <div class="profile-avatar">
+                <span id="userInitials">YO</span>
+            </div>
+            <div class="profile-info">
+                <div id="usernameDisplay" class="profile-name">Username</div>
+                <div id="modeDisplay" class="profile-status"></div>
+            </div>
+            <div class="profile-actions">
+                <div id="darkModeToggle" class="mode-toggle d-none">
+                    <span class="toggle-icon sun-icon"><i class="bi bi-sun-fill"></i></span>
+                    <span class="toggle-icon moon-icon"><i class="bi bi-moon-fill"></i></span>
+                    <span class="toggle-thumb"></span>
+                </div>
+                <button id="logoutBtn" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="main-chat">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <div class="chat-header-avatar">
+                    <span>DC</span>
+                </div>
+                <div class="chat-header-details">
+                    <div class="chat-header-name">Design Chat</div>
+                    <div class="chat-header-status">28 members</div>
+                </div>
+            </div>
+            <div class="chat-header-actions">
+                <button class="btn btn-icon"><i class="bi bi-telephone"></i></button>
+                <button class="btn btn-icon"><i class="bi bi-camera-video"></i></button>
+                <button class="btn btn-icon"><i class="bi bi-info-circle"></i></button>
+            </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="message-list" id="messageList">
+            <!-- Date Separator -->
+            <div class="message-date-separator">
+                <span>Today</span>
+            </div>
+
+            <!-- Sample Messages -->
+            <!-- Example of a received message with name and time outside the bubble -->
+            <div class="message message-received">
+                <div class="message-header">
+                    <span class="message-sender">kid</span>
+                    <span class="message-time">02:27 PM</span>
+                </div>
+                <div class="message-content-container">
+                    <div class="message-avatar">
+                        <span>K</span>
+                    </div>
+                    <div class="message-bubble">
+                        <div class="message-body">test test color</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Example of a sent message with time at the bottom -->
+            <div class="message message-sent">
+                <div class="message-content-container">
+                    <div class="message-bubble">
+                        <div class="message-body">hello</div>
+                    </div>
+                </div>
+                <span class="message-time">01:06 PM</span>
+            </div>
+
+            <!-- Example of a received message with file attachment -->
+            <div class="message message-received">
+                <div class="message-header">
+                    <span class="message-sender">kid</span>
+                    <span class="message-time">05:09 PM</span>
+                </div>
+                <div class="message-content-container">
+                    <div class="message-avatar">
+                        <span>K</span>
+                    </div>
+                    <div class="message-bubble">
+                        <div class="file-attachment">
+                            File attachment: Recommandation_Emmanuelle_NGUYEN.pdf
+                            <button class="btn btn-sm btn-primary ms-2">
+                                <i class="bi bi-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome Message (shown when no chat is selected) -->
+            <div class="welcome-message">
+                <i class="bi bi-chat-square-dots"></i>
+                <p class="fw-bold">Welcome to OceaNous's Chat</p>
+                <p>Select a user from the sidebar or use broadcast to start chatting</p>
+            </div>
+        </div>
+
+        <!-- Message Input Area -->
+        <div class="message-input-container">
+            <form id="messageForm" class="message-form">
+                <button type="button" class="btn btn-icon btn-attachment">
+                    <i class="bi bi-paperclip"></i>
+                </button>
+
+                <div class="message-input-wrapper">
+                    <input type="text" id="messageInput" class="message-input-field" placeholder="Type a message..."
+                           disabled>
+                </div>
+
+                <button type="submit" id="sendButton" class="btn btn-send" disabled>
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </form>
+
+            <div id="fileUploadArea" class="file-upload-area d-none">
+                <div class="file-upload-preview">
+                    <div class="file-info">
+                        <i class="bi bi-file-earmark"></i>
+                        <span class="file-name">Selected file</span>
+                    </div>
+                    <button class="btn btn-sm btn-remove-file">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div class="file-upload-actions">
+                    <input type="file" id="fileInput" class="d-none">
+                    <button id="uploadButton" class="btn btn-primary btn-sm">
+                        <i class="bi bi-cloud-upload-fill me-1"></i>Upload
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm cancel-upload">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Panel (optional, can be toggled) -->
+    <div class="info-panel">
+        <div class="info-panel-header">
+            <h5>Application Info</h5>
+            <button class="btn btn-sm btn-close-panel">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="info-panel-content">
+            <div class="info-panel-section">
+                <h6>Today's Notification</h6>
+                <div class="notification-panel">
+                    <div class="notification-item">
+                        <div class="notification-image">
+                            <img src="/images/notification.jpg" alt="Company Logo"
+                                 style="width: 100%; height: 100%; object-fit: contain; border-radius: 15px;">
+                        </div>
+                        <hr>
+                        <div class="notification-content d-flex align-items-center mb-2">
+                            <i class="bi bi-sunset me-2"></i>
+                            <div>
+                                <div class="notification-message small">Join us for a summer event at the DaNang's
+                                    beach!
+                                </div>
+                            </div>
+                        </div>
+                        <div class="notification-content d-flex align-items-center mb-2">
+                            <i class="bi bi-journal-code me-2"></i>
+                            <div>
+                                <div class="notification-message small">Join us for a training program on advanced Java
+                                    techniques!
+                                </div>
+                            </div>
+                        </div>
+                        <div class="notification-content d-flex align-items-center mb-2">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            <div>
+                                <div class="notification-message small">Don't miss our upcoming webinar on Spring Boot
+                                    best practices!
+                                </div>
+                            </div>
+                        </div>
+                        <div class="notification-content d-flex align-items-center mb-2">
+                            <i class="bi bi-lightbulb me-2"></i>
+                            <div>
+                                <div class="notification-message small">New tips and tricks for IntelliJ IDEA users
+                                    available now!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-panel-section">
+                <h6>Calendar</h6>
+                <div class="calendar" style="width: 100%; border: 1px solid #e9ecef; border-radius: 15px;">
+                    <div class="calendar__picture">
+                        <h2>18, Sunday</h2>
+                        <h3>November</h3>
+                    </div>
+                    <div class="calendar__date">
+                        <div class="calendar__day">M</div>
+                        <div class="calendar__day">T</div>
+                        <div class="calendar__day">W</div>
+                        <div class="calendar__day">T</div>
+                        <div class="calendar__day">F</div>
+                        <div class="calendar__day">S</div>
+                        <div class="calendar__day">S</div>
+                        <div class="calendar__number"></div>
+                        <div class="calendar__number"></div>
+                        <div class="calendar__number"></div>
+                        <div class="calendar__number">1</div>
+                        <div class="calendar__number">2</div>
+                        <div class="calendar__number">3</div>
+                        <div class="calendar__number">4</div>
+                        <div class="calendar__number">5</div>
+                        <div class="calendar__number">6</div>
+                        <div class="calendar__number">7</div>
+                        <div class="calendar__number">8</div>
+                        <div class="calendar__number">9</div>
+                        <div class="calendar__number">10</div>
+                        <div class="calendar__number">11</div>
+                        <div class="calendar__number">12</div>
+                        <div class="calendar__number">13</div>
+                        <div class="calendar__number">14</div>
+                        <div class="calendar__number">15</div>
+                        <div class="calendar__number">16</div>
+                        <div class="calendar__number">17</div>
+                        <div class="calendar__number calendar__number--current">18</div>
+                        <div class="calendar__number">19</div>
+                        <div class="calendar__number">20</div>
+                        <div class="calendar__number">21</div>
+                        <div class="calendar__number">22</div>
+                        <div class="calendar__number">23</div>
+                        <div class="calendar__number">24</div>
+                        <div class="calendar__number">25</div>
+                        <div class="calendar__number">26</div>
+                        <div class="calendar__number">27</div>
+                        <div class="calendar__number">28</div>
+                        <div class="calendar__number">29</div>
+                        <div class="calendar__number">30</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- File input for uploads (hidden) -->
+<input type="file" id="mainFileInput" style="display: none;">
+
+<!-- JavaScript Dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stomp-websocket@2.3.4-next/lib/stomp.min.js"></script>
+
+<!-- Application Script -->
+<script th:src="@{/js/chat.js}"></script>
+</body>
+</html>

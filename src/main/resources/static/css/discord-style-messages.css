@@ -1,0 +1,350 @@
+/* File attachment container */
+.file-attachment {
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* File attachment text */
+.file-attachment-text {
+    color: #1a73e8;
+    word-break: break-word;
+    margin-bottom: 5px;
+}
+
+/* File attachment download button - hide by default */
+.file-download-btn {
+    margin-top: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #dadce0;
+    border-radius: 18px;
+    color: #1a73e8;
+    font-size: 13px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.file-download-btn:hover {
+    background-color: #f1f3f4;
+}
+
+.file-download-btn i {
+    margin-right: 5px;
+}
+
+/* File preview for images */
+.file-preview {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 8px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.file-preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Enhance sent message attachment styling */
+.message-sent .file-attachment {
+    align-items: flex-end;
+}
+
+/* Make sure the attachment text is properly visible in sent messages */
+.message-sent .message-bubble .file-attachment-text {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Style for big download button on image files */
+.image-download-btn {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1a73e8;
+    font-size: 20px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Dark mode adjustments */
+.dark-mode .file-attachment-text {
+    color: #8ab4f8;
+}
+
+.dark-mode .file-download-btn {
+    background-color: #35363a;
+    border-color: #5f6368;
+    color: #8ab4f8;
+}
+
+.dark-mode .file-download-btn:hover {
+    background-color: #3c4043;
+}
+
+.dark-mode .image-download-btn {
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #8ab4f8;
+}
+
+/* Fixed styles to prevent word breaking in sent messages */
+.message {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    max-width: 85%;
+}
+
+.message-received {
+    align-self: flex-start;
+    margin-right: auto;
+}
+
+.message-sent {
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+/* Message header with sender and time - outside the bubble */
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 0 4px;
+    width: 100%;
+}
+
+.message-sender {
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+}
+
+.message-time {
+    font-size: 12px;
+    color: #8e8e93;
+}
+
+/* Content container with avatar and bubble */
+.message-content-container {
+    display: flex;
+    width: 100%;
+}
+
+.message-received .message-content-container {
+    flex-direction: row;
+}
+
+.message-sent .message-content-container {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.message-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background-color: #e2e2e2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    color: #555;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.message-sent .message-avatar {
+    display: none; /* Hide avatar for sent messages */
+}
+
+/* Message bubble base styles */
+.message-bubble {
+    border-radius: 18px;
+    padding: 10px 14px;
+    position: relative;
+}
+
+/* Received message bubble specifics */
+.message-received .message-bubble {
+    background-color: #f2f2f7;
+    border-bottom-left-radius: 4px;
+    color: #333;
+    max-width: calc(100% - 40px);
+}
+
+/* Sent message bubble - FIXED to prevent word breaking */
+.message-sent .message-bubble {
+    background-color: #c6ebfa;
+    border-bottom-right-radius: 4px;
+    color: #333;
+
+    /* Critical fixes to prevent word breaking */
+    display: inline-block;
+    white-space: pre-wrap; /* This preserves spaces but allows wrapping */
+    word-break: normal;
+    word-wrap: normal;
+    min-width: 50px;
+    width: auto !important; /* Force auto width */
+}
+
+/* Message content/body */
+.message-body {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Message body in sent messages - prevent breaking */
+.message-sent .message-body {
+    white-space: normal;
+    word-break: normal;
+}
+
+/* Timestamp at bottom for sent messages */
+.message-sent .message-time {
+    align-self: flex-end;
+    margin-top: 4px;
+    margin-right: 10px;
+}
+
+/* File attachments */
+.file-attachment {
+    color: #1a73e8;
+    font-size: 14px;
+}
+
+/* Dark mode adjustments */
+.dark-mode .message-received .message-bubble {
+    background-color: #2c2c2e;
+    color: #e4e4e4;
+}
+
+.dark-mode .message-sent .message-bubble {
+    background-color: #146a38;
+    color: #e4e4e4;
+}
+
+.dark-mode .message-sender {
+    color: #d9d9d9;
+}
+
+.dark-mode .message-time {
+    color: #a9a9a9;
+}
+
+.dark-mode .message-avatar {
+    background-color: #444;
+    color: #ddd;
+}
+
+.dark-mode .file-attachment {
+    color: #8ab4f8;
+}
+
+/* Unread badge styling */
+.user-badge {
+    background-color: #ff3b30; /* Red background */
+    color: #fff; /* White text */
+    border-radius: 50%; /* Circular shape */
+    padding: 2px 6px; /* Padding for size */
+    font-size: 12px; /* Font size */
+    font-weight: bold; /* Bold text */
+    display: inline-block; /* Inline block display */
+    min-width: 20px; /* Minimum width */
+    text-align: center; /* Center text */
+    line-height: 1.2; /* Line height */
+}
+
+.calendar {
+    position: relative;
+    width: 300px;
+    background-color: #fff;
+    box-sizing: border-box;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.calendar__picture {
+    position: relative;
+    height: 200px;
+    padding: 20px;
+    color: #fff;
+    background: #262626 url("https://i.pinimg.com/736x/5a/28/84/5a28840cb66ce8ddf133e439ef4e8e34.jpg") no-repeat center / cover;
+    box-sizing: border-box;
+
+    &::before {
+        content: "";
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        position: absolute;
+    }
+
+    h2 {
+        margin: 0;
+    }
+
+    h3 {
+        margin: 0;
+        font-weight: 500;
+    }
+}
+
+.calendar__date {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(25px, 1fr));
+    grid-gap: 10px;
+    box-sizing: border-box;
+}
+
+.calendar__day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 25px;
+    font-weight: 600;
+    color: #262626;
+
+    &:nth-child(7) {
+        color: #ff685d;
+    }
+}
+
+.calendar__number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 25px;
+    color: #262626;
+
+    &:nth-child(7n) {
+        color: #ff685d;
+        font-weight: 700;
+    }
+
+    &--current,
+    &:hover {
+        background-color: #009688;
+        color: #fff !important;
+        font-weight: 700;
+        cursor: pointer;
+    }
+}
