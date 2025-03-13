@@ -81,7 +81,7 @@ const chatApp = {
         this.restoreUnreadBadges();
     },
 
-    // Add a new method to show welcome message
+    // Show welcome message
     showWelcomeMessage: function () {
         // Clear message list
         this.messageListElement.innerHTML = '';
@@ -90,10 +90,10 @@ const chatApp = {
         const welcomeMessage = document.createElement('div');
         welcomeMessage.className = 'welcome-message';
         welcomeMessage.innerHTML = `
-        <i class="bi bi-chat-square-dots"></i>
-        <p class="fw-bold">Welcome to OceaNous's Chat</p>
-        <p>Select a user from the sidebar or use broadcast to start chatting</p>
-    `;
+            <i class="bi bi-chat-square-dots"></i>
+            <p class="fw-bold">Welcome to OceaNous's Chat</p>
+            <p>Select a user from the sidebar or use broadcast to start chatting</p>
+        `;
         this.messageListElement.appendChild(welcomeMessage);
 
         // Reset current receiver to null to indicate no active chat
@@ -104,7 +104,9 @@ const chatApp = {
 
         // Make sure the message input is disabled
         this.messageInput.disabled = true;
-        document.getElementById('sendButton').disabled = true;
+        this.fileUploadArea.classList.add('d-none');
+        const attachButton = document.querySelector('.btn-attachment');
+        if (attachButton) attachButton.classList.add('d-none');
         this.messageInput.placeholder = "Select a conversation to start chatting";
     },
 
@@ -254,6 +256,34 @@ const chatApp = {
                 this.cancelFileUpload();
             });
         }
+
+        // Mobile sidebar toggle
+        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+        if (mobileSidebarToggle) {
+            mobileSidebarToggle.addEventListener('click', () => {
+                const sidebar = document.querySelector('.sidebar');
+                if (sidebar) {
+                    sidebar.classList.toggle('active');
+                }
+            });
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            // Only activate on mobile
+            if (window.innerWidth > 768) return;
+
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarToggle = document.getElementById('mobileSidebarToggle');
+
+            // If sidebar is open and click is outside sidebar and not on the toggle button
+            if (sidebar && sidebar.classList.contains('active') &&
+                !sidebar.contains(e.target) &&
+                sidebarToggle !== e.target &&
+                !sidebarToggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
     },
 
     // Handle file selection
@@ -875,7 +905,7 @@ const chatApp = {
     },
 
     // Save unread count to localStorage with username prefix
-    saveUnreadCount: function(channel, count) {
+    saveUnreadCount: function (channel, count) {
         const userPrefix = this.username + '-';
         const unreadCounts = JSON.parse(localStorage.getItem(userPrefix + 'chat-unread-counts') || '{}');
         unreadCounts[channel] = count;
@@ -883,14 +913,14 @@ const chatApp = {
     },
 
     // Get unread count from localStorage with username prefix
-    getUnreadCount: function(channel) {
+    getUnreadCount: function (channel) {
         const userPrefix = this.username + '-';
         const unreadCounts = JSON.parse(localStorage.getItem(userPrefix + 'chat-unread-counts') || '{}');
         return unreadCounts[channel] || 0;
     },
 
     // Clear unread count for a channel with username prefix
-    clearUnreadCount: function(channel) {
+    clearUnreadCount: function (channel) {
         const userPrefix = this.username + '-';
         const unreadCounts = JSON.parse(localStorage.getItem(userPrefix + 'chat-unread-counts') || '{}');
         unreadCounts[channel] = 0;
@@ -898,7 +928,7 @@ const chatApp = {
     },
 
     // Restore unread badges from localStorage with username prefix
-    restoreUnreadBadges: function() {
+    restoreUnreadBadges: function () {
         if (!this.username) {
             console.warn("Cannot restore badges: username not available");
             return;
