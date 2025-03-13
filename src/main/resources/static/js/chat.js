@@ -762,19 +762,30 @@ const chatApp = {
 
     // Receive broadcast message
     receiveBroadcastMessage: function (message) {
-        // Always display broadcast messages if they're new
-        this.displayMessage(message, true);
+        // Only display broadcast messages if currently viewing broadcast channel
+        if (this.currentReceiver === 'broadcast') {
+            this.displayMessage(message, true);
+            this.scrollToBottom();
+        }
 
         // If not currently viewing broadcast, mark unread in sidebar
-        if (this.currentReceiver !== 'broadcast') {
-            const chatListItem = document.querySelector('.chat-list-item[data-chat="broadcast"]');
-            if (chatListItem) {
-                const badge = chatListItem.querySelector('.chat-badge');
-                if (badge) {
-                    const count = parseInt(badge.textContent) || 0;
-                    badge.textContent = count + 1;
-                    badge.classList.remove('d-none');
+        else {
+            const broadcastItem = document.querySelector('[data-user="broadcast"]');
+            if (broadcastItem) {
+                broadcastItem.classList.add('unread');
+
+                // Add or update badge
+                let badge = broadcastItem.querySelector('.user-badge');
+                if (!badge) {
+                    const userInfo = broadcastItem.querySelector('.user-info');
+                    badge = document.createElement('span');
+                    badge.className = 'user-badge';
+                    userInfo.appendChild(badge);
                 }
+
+                const count = parseInt(badge.textContent) || 0;
+                badge.textContent = count + 1;
+                badge.classList.remove('d-none');
             }
         }
     },
