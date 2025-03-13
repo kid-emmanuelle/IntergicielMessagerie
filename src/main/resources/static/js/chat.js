@@ -76,6 +76,9 @@ const chatApp = {
         if (!this.isAnonymousMode) {
             this.loadPendingFiles();
         }
+
+        // After initialization, restore unread badges
+        this.restoreUnreadBadges();
     },
 
     // Add a new method to show welcome message
@@ -396,36 +399,84 @@ const chatApp = {
             return;
         }
 
-        // Update in users panel (for backward compatibility)
-        const existingUser = this.userListElement.querySelector(`[data-user="${userStatus.username}"]`);
+        console.log("User status update:", userStatus);
 
-        if (userStatus.online && userStatus.connectionMode === 'PUBLIC') {
-            // User came online
-            if (!existingUser) {
-                this.addUserToList(userStatus);
-            }
-        } else {
-            // User went offline or changed to PSEUDO_ANONYMOUS
-            if (existingUser) {
-                // Delete user from list
-                existingUser.remove();
+        // Store current unread count before potentially removing the user
+        let currentUnreadCount = 0;
+        const userElement = this.userListElement.querySelector(`[data-user="${userStatus.username}"]`);
+        if (userElement) {
+            const badge = userElement.querySelector('.user-badge');
+            if (badge && !badge.classList.contains('d-none')) {
+                currentUnreadCount = parseInt(badge.textContent) || 0;
             }
         }
 
-        // Update in chat list
+        // If there are unread messages, save them to persistence
+        if (currentUnreadCount > 0) {
+            this.saveUnreadCount(userStatus.username, currentUnreadCount);
+            console.log(`Saved ${currentUnreadCount} unread messages for ${userStatus.username}`);
+        }
+
+        // Update or remove user from list based on status
+        if (userStatus.online && userStatus.connectionMode === 'PUBLIC') {
+            // User came online - add or update
+            if (!userElement) {
+                this.addUserToList(userStatus);
+
+                // User was just added - check if we had stored unread messages
+                const storedCount = this.getUnreadCount(userStatus.username);
+                if (storedCount > 0) {
+                    setTimeout(() => {
+                        // Add badge after DOM has updated
+                        const newUserElement = this.userListElement.querySelector(`[data-user="${userStatus.username}"]`);
+                        if (newUserElement) {
+                            newUserElement.classList.add('unread');
+
+                            let badge = newUserElement.querySelector('.user-badge');
+                            if (!badge) {
+                                const userInfo = newUserElement.querySelector('.user-info');
+                                if (userInfo) {
+                                    badge = document.createElement('span');
+                                    badge.className = 'user-badge';
+                                    userInfo.appendChild(badge);
+                                }
+                            }
+
+                            if (badge) {
+                                badge.textContent = storedCount;
+                                badge.classList.remove('d-none');
+                                console.log(`Restored ${storedCount} unread messages for ${userStatus.username}`);
+                            }
+                        }
+                    }, 100);
+                }
+            } else {
+                // Update existing user's online status
+                const statusIndicator = userElement.querySelector('.status-indicator');
+                if (statusIndicator) {
+                    statusIndicator.classList.remove('offline');
+                    statusIndicator.classList.add('online');
+                }
+            }
+        } else {
+            // User went offline or changed to PSEUDO_ANONYMOUS - remove from list
+            if (userElement) {
+                userElement.remove();
+            }
+        }
+
+        // Update chat list if it exists
         const chatItem = document.querySelector(`.chat-list-item[data-chat="${userStatus.username}"]`);
         if (chatItem) {
-            const statusIndicator = chatItem.querySelector('.status-indicator');
-            const lastMessage = chatItem.querySelector('.chat-last-message');
-
             if (userStatus.online) {
+                const statusIndicator = chatItem.querySelector('.status-indicator');
+                const lastMessage = chatItem.querySelector('.chat-last-message');
                 if (statusIndicator) statusIndicator.classList.remove('offline');
                 if (statusIndicator) statusIndicator.classList.add('online');
                 if (lastMessage) lastMessage.textContent = 'Online';
             } else {
-                if (statusIndicator) statusIndicator.classList.remove('online');
-                if (statusIndicator) statusIndicator.classList.add('offline');
-                if (lastMessage) lastMessage.textContent = 'Offline';
+                // Remove from chat list
+                chatItem.remove();
             }
         }
 
@@ -470,39 +521,82 @@ const chatApp = {
                     return;
                 }
 
-                // Preserve the broadcast item
-                const existingBroadcast = this.userListElement.querySelector('[data-user="broadcast"]');
-                this.userListElement.innerHTML = '';
+                // Get all current users to compare
+                const currentUsers = Array.from(this.userListElement.querySelectorAll('[data-user]'))
+                    .filter(el => el.getAttribute('data-user') !== 'broadcast')
+                    .map(el => el.getAttribute('data-user'));
 
-                if (existingBroadcast) {
-                    this.userListElement.appendChild(existingBroadcast);
-                } else {
+                console.log("Current users in list:", currentUsers);
+
+                // Keep broadcast item or create it if missing
+                let broadcastItem = this.userListElement.querySelector('[data-user="broadcast"]');
+                if (!broadcastItem) {
                     // If broadcast element was lost, recreate it
-                    const broadcastItem = document.createElement('div');
+                    broadcastItem = document.createElement('div');
                     broadcastItem.className = 'user-item';
                     broadcastItem.setAttribute('data-user', 'broadcast');
                     broadcastItem.innerHTML = `
-                    <div class="user-avatar">
-                        <i class="bi bi-broadcast"></i>
-                    </div>
-                    <div class="user-info">
-                        <span class="user-name">Broadcast to All</span>
-                    </div>
+                <div class="user-avatar">
+                    <i class="bi bi-broadcast"></i>
+                </div>
+                <div class="user-info">
+                    <span class="user-name">Broadcast to All</span>
+                </div>
                 `;
                     broadcastItem.addEventListener('click', () => {
                         this.selectReceiver('broadcast');
                     });
-                    this.userListElement.appendChild(broadcastItem);
+
+                    // Insert broadcast at top of list
+                    if (this.userListElement.firstChild) {
+                        this.userListElement.insertBefore(broadcastItem, this.userListElement.firstChild);
+                    } else {
+                        this.userListElement.appendChild(broadcastItem);
+                    }
                 }
 
-                // Add other users
+                // Track users we've handled
+                const processedUsers = ['broadcast'];
+
+                // Add or update users
                 users.forEach(user => {
                     if (user.username !== this.username && user.connectionMode === 'PUBLIC') {
-                        this.addUserToList(user);
+                        processedUsers.push(user.username);
+
+                        // Check if user already exists in the list
+                        const existingUser = this.userListElement.querySelector(`[data-user="${user.username}"]`);
+                        if (existingUser) {
+                            // Update online status only
+                            const statusIndicator = existingUser.querySelector('.status-indicator');
+                            if (statusIndicator) {
+                                statusIndicator.classList.remove('offline');
+                                statusIndicator.classList.add('online');
+                            }
+                        } else {
+                            // Add new user
+                            this.addUserToList(user);
+                        }
                     }
                 });
 
-                console.log(`Loaded ${users.length} online users`);
+                // For any users not in the new list, mark as offline but don't remove
+                currentUsers.forEach(username => {
+                    if (!processedUsers.includes(username)) {
+                        const userElement = this.userListElement.querySelector(`[data-user="${username}"]`);
+                        if (userElement) {
+                            const statusIndicator = userElement.querySelector('.status-indicator');
+                            if (statusIndicator) {
+                                statusIndicator.classList.remove('online');
+                                statusIndicator.classList.add('offline');
+                            }
+                        }
+                    }
+                });
+
+                console.log(`Updated ${users.length} online users`);
+
+                // Restore unread badges
+                this.restoreUnreadBadges();
             })
             .catch(error => {
                 console.error('Error loading online users:', error);
@@ -518,19 +612,36 @@ const chatApp = {
         const initials = this.getInitials(user.username);
 
         userItem.innerHTML = `
-            <div class="user-avatar">
-                <span>${initials}</span>
-            </div>
-            <div class="user-info">
-                <span class="user-name">${user.username}</span>
-            </div>
-        `;
+        <div class="user-avatar">
+            <span>${initials}</span>
+        </div>
+        <div class="user-info">
+            <span class="user-name">${user.username}</span>
+        </div>
+    `;
 
         userItem.addEventListener('click', () => {
             this.selectReceiver(user.username, user.online);
         });
 
         this.userListElement.appendChild(userItem);
+
+        // Check if there are unread messages for this user
+        const unreadCount = this.getUnreadCount(user.username);
+        if (unreadCount > 0) {
+            // Add badge with unread count
+            userItem.classList.add('unread');
+
+            const userInfo = userItem.querySelector('.user-info');
+            if (userInfo) {
+                const badge = document.createElement('span');
+                badge.className = 'user-badge';
+                badge.textContent = unreadCount;
+                userInfo.appendChild(badge);
+
+                console.log(`Restored badge with ${unreadCount} unread messages for ${user.username}`);
+            }
+        }
     },
 
     // Clear unread badge for a user
@@ -565,6 +676,9 @@ const chatApp = {
 
         // Clear unread badge when selecting a user
         this.clearUnreadBadge(username);
+
+        // Clear unread count in localStorage
+        this.clearUnreadCount(username);
 
         // Show file upload for private messages in PUBLIC mode
         if (username !== 'broadcast' && !this.isAnonymousMode) {
@@ -760,12 +874,117 @@ const chatApp = {
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     },
 
+    // Save unread count to localStorage with username prefix
+    saveUnreadCount: function(channel, count) {
+        const userPrefix = this.username + '-';
+        const unreadCounts = JSON.parse(localStorage.getItem(userPrefix + 'chat-unread-counts') || '{}');
+        unreadCounts[channel] = count;
+        localStorage.setItem(userPrefix + 'chat-unread-counts', JSON.stringify(unreadCounts));
+    },
+
+    // Get unread count from localStorage with username prefix
+    getUnreadCount: function(channel) {
+        const userPrefix = this.username + '-';
+        const unreadCounts = JSON.parse(localStorage.getItem(userPrefix + 'chat-unread-counts') || '{}');
+        return unreadCounts[channel] || 0;
+    },
+
+    // Clear unread count for a channel with username prefix
+    clearUnreadCount: function(channel) {
+        const userPrefix = this.username + '-';
+        const unreadCounts = JSON.parse(localStorage.getItem(userPrefix + 'chat-unread-counts') || '{}');
+        unreadCounts[channel] = 0;
+        localStorage.setItem(userPrefix + 'chat-unread-counts', JSON.stringify(unreadCounts));
+    },
+
+    // Restore unread badges from localStorage with username prefix
+    restoreUnreadBadges: function() {
+        if (!this.username) {
+            console.warn("Cannot restore badges: username not available");
+            return;
+        }
+
+        const userPrefix = this.username + '-';
+        const storageKey = userPrefix + 'chat-unread-counts';
+        const storageData = localStorage.getItem(storageKey);
+        console.log(`Restoring badges from ${storageKey}, data:`, storageData);
+
+        const unreadCounts = JSON.parse(storageData || '{}');
+        console.log("Parsed unread counts:", unreadCounts);
+
+        // Restore broadcast badge if needed
+        const broadcastCount = unreadCounts['broadcast'] || 0;
+        console.log(`Broadcast count for ${this.username}:`, broadcastCount);
+
+        if (broadcastCount > 0) {
+            const broadcastItem = this.userListElement.querySelector('[data-user="broadcast"]');
+            if (broadcastItem) {
+                broadcastItem.classList.add('unread');
+
+                // Add or update badge
+                let badge = broadcastItem.querySelector('.user-badge');
+                if (!badge) {
+                    const userInfo = broadcastItem.querySelector('.user-info');
+                    if (userInfo) {
+                        badge = document.createElement('span');
+                        badge.className = 'user-badge';
+                        userInfo.appendChild(badge);
+                    } else {
+                        console.warn("User info element not found for broadcast");
+                    }
+                }
+
+                if (badge) {
+                    badge.textContent = broadcastCount;
+                    badge.classList.remove('d-none');
+                    console.log("Broadcast badge updated");
+                }
+            } else {
+                console.warn("Broadcast element not found");
+            }
+        }
+
+        // Restore badges for private messages
+        Object.keys(unreadCounts).forEach(channel => {
+            if (channel !== 'broadcast' && unreadCounts[channel] > 0) {
+                console.log(`Restoring badge for ${channel}: ${unreadCounts[channel]}`);
+
+                const userElement = this.userListElement.querySelector(`[data-user="${channel}"]`);
+                if (userElement) {
+                    userElement.classList.add('unread');
+
+                    // Add or update badge
+                    let badge = userElement.querySelector('.user-badge');
+                    if (!badge) {
+                        const userInfo = userElement.querySelector('.user-info');
+                        if (userInfo) {
+                            badge = document.createElement('span');
+                            badge.className = 'user-badge';
+                            userInfo.appendChild(badge);
+                        } else {
+                            console.warn(`User info element not found for ${channel}`);
+                            return;
+                        }
+                    }
+
+                    badge.textContent = unreadCounts[channel];
+                    badge.classList.remove('d-none');
+                    console.log(`Updated badge for ${channel}`);
+                } else {
+                    console.warn(`User element not found for ${channel}`);
+                }
+            }
+        });
+    },
+
     // Receive broadcast message
     receiveBroadcastMessage: function (message) {
         // Only display broadcast messages if currently viewing broadcast channel
         if (this.currentReceiver === 'broadcast') {
             this.displayMessage(message, true);
             this.scrollToBottom();
+            // Clear unread count when viewing broadcast
+            this.clearUnreadCount('broadcast');
         }
 
         // If not currently viewing broadcast, mark unread in sidebar
@@ -783,41 +1002,66 @@ const chatApp = {
                     userInfo.appendChild(badge);
                 }
 
-                const count = parseInt(badge.textContent) || 0;
-                badge.textContent = count + 1;
+                // Get current count from localStorage and increment
+                const count = this.getUnreadCount('broadcast') + 1;
+                badge.textContent = count;
                 badge.classList.remove('d-none');
+
+                // Save updated count
+                this.saveUnreadCount('broadcast', count);
             }
         }
     },
 
     // Receive private message
     receivePrivateMessage: function (message) {
+        // Skip if this is a message from the current user
+        if (message.sender === this.username) {
+            this.displayMessage(message, false);
+            return;
+        }
+
         const sender = message.sender;
 
         // If currently chatting with this user, display message
-        if (this.currentReceiver === message.sender || message.sender === this.username) {
+        if (this.currentReceiver === sender) {
             this.displayMessage(message, false);
+            this.scrollToBottom();
+            // Clear unread count when viewing this sender's messages
+            this.clearUnreadCount(sender);
         }
-
         // If not currently viewing conversation with this sender, mark as unread
-        if (this.currentReceiver !== message.sender && message.sender !== this.username) {
-            const userElement = this.userListElement.querySelector(`[data-user="${message.sender}"]`);
+        else {
+            const userElement = this.userListElement.querySelector(`[data-user="${sender}"]`);
             if (userElement) {
                 userElement.classList.add('unread');
 
+                // Get current count from localStorage and increment
+                const count = this.getUnreadCount(sender) + 1;
+
                 // Add visual indicator
-                const badge = userElement.querySelector('.user-badge');
-                if (badge) {
-                    const count = parseInt(badge.textContent) || 0;
-                    badge.textContent = count + 1;
-                    badge.classList.remove('d-none');
-                } else {
+                let badge = userElement.querySelector('.user-badge');
+                if (!badge) {
                     const userInfo = userElement.querySelector('.user-info');
-                    const badge = document.createElement('span');
-                    badge.className = 'user-badge';
-                    badge.textContent = '1';
-                    userInfo.appendChild(badge);
+                    if (userInfo) {
+                        badge = document.createElement('span');
+                        badge.className = 'user-badge';
+                        userInfo.appendChild(badge);
+                    }
                 }
+
+                if (badge) {
+                    badge.textContent = count;
+                    badge.classList.remove('d-none');
+                }
+
+                // Save updated count to localStorage
+                this.saveUnreadCount(sender, count);
+
+                // Log for debugging
+                console.log(`Updated unread count for ${sender}: ${count}`);
+            } else {
+                console.warn(`User element for ${sender} not found`);
             }
         }
     },
