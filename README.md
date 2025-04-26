@@ -36,8 +36,8 @@ mvn spring-boot:run
 ```
 
 Le service sera accessible à l'adresse suivante :
-- **GET**: `http://localhost:8081/monservice/echo/{nom}`
-- **POST**: `http://localhost:8081/monservice/hello` avec un corps JSON `{"nom": "value"}`
+- **GET**: `http://localhost:8080/monservice/echo/{nom}`
+- **POST**: `http://localhost:8080/monservice/hello` avec un corps JSON `{"nom": "value"}`
 
 ### 4. Exécuter le projet avec Docker
 
