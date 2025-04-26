@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+  namespace: eda-app
+  labels:
+    app: intergicielmessagerie
+spec:
+  replicas: 1 # Commencez avec 1 réplique, augmentez si nécessaire
+  selector:
+    matchLabels:
+      app: intergicielmessagerie
+  template:
+    metadata:
+      labels:
+        app: intergicielmessagerie
+    spec:
+      containers:
+        - name: intergicielmessagerie
+          # !! Important: Utilise l'image locale retaggée sans préfixe
+          image: intergicielmessagerie:0.0.1-SNAPSHOT
+          # Si Minikube ne peut pas accéder directement à localhost:5000
+          # Vous pourriez avoir besoin d'utiliser `minikube image load localhost:5000/intergicielmessagerie:0.0.1-SNAPSHOT`
+          # ou configurer Minikube pour utiliser le daemon Docker hôte.
+          # Pour l'instant, on suppose que Minikube peut accéder au registry.
+          imagePullPolicy: IfNotPresent # <--- Changé de Always à IfNotPresent
+          ports:
+            - containerPort: 8080 # Port exposé par l'application
+          envFrom:
+            # Injecter toutes les clés du ConfigMap comme variables d'env
+            - configMapRef:
+                name: app-config
+            # Injecter les clés du Secret PostgreSQL comme variables d'env
+            # (SPRING_DATASOURCE_USERNAME et SPRING_DATASOURCE_PASSWORD)
+            - secretRef:
+                name: postgres-secret
+          # Ajouter les clés spécifiques pour correspondre à ce que Spring Boot attend
+          # (Spring Boot déduit souvent le username/password de l'URL, mais c'est plus explicite)
+          env:
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          # Readiness et Liveness Probes (Optionnel mais recommandé)
+          # readinessProbe:
+          #   httpGet:
+          #     path: /actuator/health/readiness # Ajustez le chemin si nécessaire
+          #     port: 8080
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 10
+          # livenessProbe:
+          #   httpGet:
+          #     path: /actuator/health/liveness # Ajustez le chemin si nécessaire
+          #     port: 8080
+          #   initialDelaySeconds: 60
+          #   periodSeconds: 15 

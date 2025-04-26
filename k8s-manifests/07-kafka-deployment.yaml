@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-deployment
+  namespace: eda-app
+  labels:
+    app: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: confluentinc/cp-kafka:latest # Image Confluent pour Kafka
+          ports:
+            - containerPort: 9092 # Port interne standard de Kafka
+          env:
+            - name: KAFKA_BROKER_ID
+              value: "1"
+            - name: KAFKA_ZOOKEEPER_CONNECT
+              # Utilise le nom du service Zookeeper et son port
+              value: "zookeeper-service.eda-app.svc.cluster.local:2181"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              # Adresse accessible DANS le cluster via le service Kafka
+              value: "PLAINTEXT://kafka-service.eda-app.svc.cluster.local:9092"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1" # Suffisant pour un seul broker en dév/test 

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+  namespace: eda-app
+spec:
+  selector:
+    app: intergicielmessagerie # Doit correspondre aux labels du Pod de l'application
+  ports:
+    - protocol: TCP
+      port: 80 # Port exposé par le service
+      targetPort: 8080 # Port du container de l'application
+  type: NodePort # Changez en NodePort ou LoadBalancer si accès externe requis 

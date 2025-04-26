@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: eda-app
+spec:
+  accessModes:
+    - ReadWriteOnce # Convient pour un seul pod de base de données
+  resources:
+    requests:
+      storage: 1Gi # Taille du volume, ajustable selon les besoins 
